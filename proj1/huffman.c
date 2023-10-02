@@ -60,7 +60,7 @@ void printCodes(struct Node *root, int arr[], int top, int closed, char filename
     }
 }
 
-void findHuffmanCode(struct Node *root, char targetChar, char *currentPath, int depth)
+void findHuffmanCode(struct Node *root, char targetChar, char *currentPath, int depth, FILE *file3)
 {
     if (root == NULL)
     {
@@ -71,24 +71,22 @@ void findHuffmanCode(struct Node *root, char targetChar, char *currentPath, int 
     if (root->left != NULL)
     {
         currentPath[depth] = '1';
-        findHuffmanCode(root->left, targetChar, currentPath, depth + 1);
+        findHuffmanCode(root->left, targetChar, currentPath, depth + 1, file3);
     }
     if (root->right != NULL)
     {
         currentPath[depth] = '0';
-        findHuffmanCode(root->right, targetChar, currentPath, depth + 1);
+        findHuffmanCode(root->right, targetChar, currentPath, depth + 1, file3);
     }
 
     // If it's a leaf node and matches the target character, print the code
     if (root->left == NULL && root->right == NULL && root->data == targetChar)
     {
         currentPath[depth] = '\0'; // Null-terminate the string
-        printf("Huffman code for '%c': %s\n", targetChar, currentPath);
-
+        // printf("Huffman code for '%c': %s\n", targetChar, currentPath);
         // put the huffman code into h.out
-        FILE *file3 = fopen("h.out", "a");
-        fprintf(file3, "%s", currentPath);
-
+        // fprintf(file3, "%s", currentPath);
+        fwrite(currentPath, sizeof(char), (sizeof(currentPath) / sizeof(char)), file3);
     }
 }
 
@@ -134,14 +132,18 @@ struct Node *buildHuffmanTree(struct Node *nodes[], int size)
 }
 int main(int argc, char *argv[])
 { // argc==#of args, argv==args
-    char filename[] = "test.txt";
+    // char filename[] = "test.txt";
+    char filename[] = "completeShakespeare.txt";
+
     // char filename[] = "completeShakespeare.txt";
     char output_filename[] = "h.out";
-    unsigned char binaryData[] = {0x12, 0x34, 0x56, 0x78};
+    // unsigned char binaryData[] = {0x12, 0x34, 0x56, 0x78};
     int frequencies[256] = {0}; // index == ASCII code
     int character;              // To store the read character
 
     FILE *file;
+    FILE *file3 = fopen("h.out", "wb");
+
 
     // Check for flags
     if (argc == 5)
@@ -189,9 +191,10 @@ int main(int argc, char *argv[])
 
     FILE *file2 = fopen(filename, "r");
 
+
     while ((character = fgetc(file2)) != EOF)
     {
-        findHuffmanCode(root, character, currentPath, 0);
+        findHuffmanCode(root, character, currentPath, 0, file3);
 
     }
     return 0;
