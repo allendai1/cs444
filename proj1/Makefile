@@ -4,7 +4,7 @@ CC = gcc
 all: huffman_execute.out
 	./huffman_execute.out -i completeShakespeare.txt -o huffman.out
 
-huffman_execute.out: huffman.c
+huffman_execute.out: huffmanCode.c
 	$(CC)  -o $@ $^
 
 clean:
