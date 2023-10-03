@@ -20,24 +20,18 @@ struct Node *newNode(char data, int freq)
     return node;
 }
 
-void printCodes(struct Node *root, int arr[], int top, int closed, char filename[])
+void printCodes(struct Node *root, int arr[], int top)
 {
 
-    if (closed == 0)
-    {
-        fopen(filename, "w+");
-        closed = 1;
-    }
     if (root->right)
     {
-        // printf("%c", root->data);
         arr[top] = 0;
-        printCodes(root->right, arr, top + 1, closed, filename);
+        printCodes(root->right, arr, top + 1);
     }
     if (root->left)
     {
         arr[top] = 1;
-        printCodes(root->left, arr, top + 1, closed, filename);
+        printCodes(root->left, arr, top + 1);
     }
 
     if (!root->left && !root->right)
@@ -45,49 +39,59 @@ void printCodes(struct Node *root, int arr[], int top, int closed, char filename
 
         if (root->freq > 0)
         {
-            FILE *file = fopen("h.out", "a");
             printf("%c\t%d\t", root->data, root->freq);
             for (int i = 0; i < top; i++)
             {
 
                 printf("%d", arr[i]);
-                fprintf(file, "%d", arr[i]);
             }
-            fclose(file);
 
             printf("\n");
         }
     }
 }
 
-void findHuffmanCode(struct Node *root, char targetChar, char *currentPath, int depth, FILE *file3)
+char *findHuffmanCode(struct Node *root, char targetChar, char *binaryString, int depth, FILE *file3)
 {
     if (root == NULL)
     {
-        return;
+        return NULL;
     }
 
-    // Append '0' for left branch and '1' for right branch
+    // Append '0' for left  and '1' for right
     if (root->left != NULL)
     {
-        currentPath[depth] = '1';
-        findHuffmanCode(root->left, targetChar, currentPath, depth + 1, file3);
-    }
-    if (root->right != NULL)
-    {
-        currentPath[depth] = '0';
-        findHuffmanCode(root->right, targetChar, currentPath, depth + 1, file3);
+        binaryString[depth] = '1';
+        char *leftRes = findHuffmanCode(root->left, targetChar, binaryString, depth + 1, file3);
+        if (leftRes != NULL)
+        {
+            return leftRes;
+        }
     }
 
-    // If it's a leaf node and matches the target character, print the code
+    if (root->right != NULL)
+    {
+        binaryString[depth] = '0';
+        char *rightRes = findHuffmanCode(root->right, targetChar, binaryString, depth + 1, file3);
+        if (rightRes != NULL)
+        {
+            return rightRes;
+        }
+    }
+
+    // target char is found, return the binary as a string
     if (root->left == NULL && root->right == NULL && root->data == targetChar)
     {
-        currentPath[depth] = '\0'; // Null-terminate the string
-        // printf("Huffman code for '%c': %s\n", targetChar, currentPath);
-        // put the huffman code into h.out
-        // fprintf(file3, "%s", currentPath);
-        fwrite(currentPath, sizeof(char), (sizeof(currentPath) / sizeof(char)), file3);
+        char *result = (char *)malloc((depth + 1) * sizeof(char));
+        if (result != NULL)
+        {
+            strncpy(result, binaryString, depth);
+            result[depth] = '\0';
+        }
+        return result;
     }
+
+    return NULL; // Return NULL if the targetChar is not found in the subtree
 }
 
 struct Node *buildHuffmanTree(struct Node *nodes[], int size)
@@ -115,7 +119,7 @@ struct Node *buildHuffmanTree(struct Node *nodes[], int size)
             }
         }
 
-        // Create a new node with the sum of the frequencies of the two lowest nodes
+        // Create a new node with the sum of the frequencies
         struct Node *mergedNode = newNode('\0', nodes[min1]->freq + nodes[min2]->freq);
         mergedNode->left = nodes[min1];
         mergedNode->right = nodes[min2];
@@ -131,19 +135,12 @@ struct Node *buildHuffmanTree(struct Node *nodes[], int size)
     return nodes[0];
 }
 int main(int argc, char *argv[])
-{ // argc==#of args, argv==args
-    // char filename[] = "test.txt";
+{
+
     char filename[] = "completeShakespeare.txt";
-
-    // char filename[] = "completeShakespeare.txt";
-    char output_filename[] = "h.out";
-    // unsigned char binaryData[] = {0x12, 0x34, 0x56, 0x78};
-    int frequencies[256] = {0}; // index == ASCII code
-    int character;              // To store the read character
-
-    FILE *file;
-    FILE *file3 = fopen("h.out", "wb");
-
+    char output_filename[] = "huffman.out";
+    int frequencies[256] = {0};
+    int character;
 
     // Check for flags
     if (argc == 5)
@@ -160,6 +157,9 @@ int main(int argc, char *argv[])
             strcpy(output_filename, argv[4]);
         }
     }
+    FILE *file;
+    FILE *file3 = fopen(output_filename, "wb");
+
     file = fopen(filename, "r");
 
     // Create an array of character frequencies
@@ -179,23 +179,50 @@ int main(int argc, char *argv[])
 
     struct Node *root = buildHuffmanTree(nodes, 256);
 
-    int arr[100]; // Assuming a maximum code length of 100
+    int arr[500];
     int top = 0;
 
     printf("Huffman Codes:\n");
 
-    // printCodes(root, arr, top, 0, output_filename);
+    printCodes(root, arr, top);
 
-    char currentPath[100];
+    char binaryString[500];
 
-
+    // read in specified filename
     FILE *file2 = fopen(filename, "r");
 
+    int bitCount = 0;
+    char byteBuffer = 0;
+    int i;
 
+    // A  B  C     D D  A A A A D
+    // 0 110 1110 10 10 0 0 0 0 10
     while ((character = fgetc(file2)) != EOF)
     {
-        findHuffmanCode(root, character, currentPath, 0, file3);
 
+        // get huffman code for character
+        char *x = findHuffmanCode(root, character, binaryString, 0, file3); // ex. "110"
+        // go through the binary string and add each digit to buffer
+        for (i = 0; i < strlen(x); i++)
+        {
+            byteBuffer <<= 1;     // make space for adding digit to the right
+            int bit = x[i] - '0'; // Turn '0' into 0 and '1' into 1
+            byteBuffer |= bit;
+            bitCount++;
+
+            // if buffer full, write it and empty it
+            if (bitCount == 8)
+            {
+                fwrite(&byteBuffer, 1, 1, file3);
+                // reset buffer
+                bitCount = 0;
+                byteBuffer = 0;
+            }
+        }
+    }
+    if (bitCount > 0)
+    {
+        fwrite(&byteBuffer, 1, 1, file3);
     }
     return 0;
 }
