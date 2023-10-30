@@ -12,14 +12,11 @@ unsigned char hamming74(int nibble)
     unsigned int p1 = x3 ^ x0 ^ x2;
     unsigned int p2 = x1 ^ x0 ^ x3;
     unsigned int p4 = x0 ^ x1 ^ x2;
-    // printf("%d%d%d%d%d%d%d\n", p1,p2,x3,p4,x2,x1,x0);
-    // printf("%d%d%d%d\n", x3, x2, x1, x0);
-
     unsigned char binary = ((p1 << 7) | (p2 << 6) | (x3 << 5) | (p4 << 4) | (x2 << 3) | (x1 << 2) | (x0 << 1)) >> 1;
 
     // unsigned char binary = 0b0;
     return binary;
-} 
+}
 
 void encodeRAID2(char *inputFilename)
 {
@@ -36,17 +33,22 @@ void encodeRAID2(char *inputFilename)
     char outputFilenames[7][256];
     // 7 buffers, 8 bits per buffer
     // put 1 bit from left + 1 bit from right in each buffer
-    char suffixes[7][8] = {"p1", "p2", "x3", "p4", "x2", "x1", "x0"};
+    //{"p1", "p2", "x3", "p4", "x2", "x1", "x0"}
+    // char suffixes[7][8] = {"p1", "p2", "x3", "p4", "x2", "x1", "x0"};
+
+    char suffixes[7][8] = {"part0", "part1", "part2", "part3", "part4", "part5", "part6"};
+
+    // int suffixes[7][8];
 
     for (int i = 0; i < 7; i++)
     {
-        snprintf(outputFilenames[i], sizeof(outputFilenames[i]), "%s.%s", inputFilename, suffixes[i]);
-        outputFiles[i] = fopen(outputFilenames[i], "wb");
-        if (outputFiles[i] == NULL)
-        {
-            perror("Error creating output file");
-            exit(EXIT_FAILURE);
-        }
+    snprintf(outputFilenames[i], sizeof(outputFilenames[i]), "%s.%s", inputFilename, suffixes[i]);
+    outputFiles[i] = fopen(outputFilenames[i], "wb");
+    if (outputFiles[i] == NULL)
+    {
+        perror("Error creating output file");
+        exit(EXIT_FAILURE);
+    }
     }
 
     // Perform RAID2 encoding
@@ -55,21 +57,66 @@ void encodeRAID2(char *inputFilename)
     int parityBlocks[3] = {0}; // Parity blocks: P1, P2, P4
     int index = 0;
     int byte;
-
+    int lindex = 0;
+    int rindex = 1;
     while (1)
     {
         byte = fgetc(inputFile); // get char from input file
         unsigned char nibble_left = (byte >> 4) & 0x0F;
         unsigned char nibble_right = byte & 0x0F;
+        // take char, split into left and right nibble
+        // take left nibble and get hamming code
+        // take right nibble and get hamming code
+        // put the leftmost bit of left nibble into p1
+        // put the leftmost bit of right nibble into p1
+        // put 2nd leftmost bit of left/right into p2
+        // etc ..
+
         if (nibble_left ^ nibble_right)
         {
-            printf("%d : ", nibble_left);
-            printf("%d\n", hamming74(nibble_left));
-            printf("%d : ", nibble_right);
-            printf("%d\n", hamming74(nibble_right));
+            int i;
 
-        //    hamming74(nibble_right);
-            
+            unsigned char hl = hamming74(nibble_left);
+            unsigned char hr = hamming74(nibble_right);
+            // for each p1,p2,p4,x0,x1,x2,x3, place lbitrbit into each
+            for (i = 0; i < 7; i++)
+            {
+                // get the ith leftmost bit
+                // hl & (1 << (sizeof(char) * 8 - (i+1)));
+                // hr & (1 << (sizeof(char) * 8 - (i+1)));
+                // put leftmost bit of each and put into p1,p2, etc.
+                suffixes[i][lindex] = hl & (1 << (sizeof(char) * 8 - (i + 1)));
+                suffixes[i][rindex] = hr & (1 << (sizeof(char) * 8 - (i + 1)));
+            }
+
+            // increase index for where to place the bits
+            lindex++;
+            rindex++;
+            // reset position
+            if (rindex > 7 || lindex > 6)
+            {
+                lindex = 0;
+                rindex = 1;
+            }
+            // assuming suffixes buffer is full
+            // need to reset the buffer, and output each suffixes row a diff file
+
+            // for (int j = 0; j < 7; j++)
+            // {
+            //     // fwrite()
+            //     // snprintf(outputFilenames[i], sizeof(outputFilenames[i]), "%s.%s", inputFilename, suffixes[i]);
+            //     outputFiles[j] = fopen(outputFilenames[i], "wb");
+            //     if (outputFiles[j] == NULL)
+            //     {
+            //         perror("Error creating output file");
+            //         exit(EXIT_FAILURE);
+            //     }
+            // }
+            // printf("%d : ", nibble_left);
+            // printf("%d\n", hamming74(nibble_left));
+            // printf("%d : ", nibble_right);
+            // printf("%d\n", hamming74(nibble_right));
+            //    hamming74(nibble_right);
         }
 
         if (byte == EOF)
@@ -99,7 +146,6 @@ int main(int argc, char *argv[])
 
     char *inputFilename = argv[2];
 
-    
     encodeRAID2(inputFilename);
 
     return EXIT_SUCCESS;
