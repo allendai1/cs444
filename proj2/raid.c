@@ -35,7 +35,8 @@ void encodeRAID2(char *inputFilename)
     FILE *outputFiles[7];
     char outputFilenames[7][256];
     // 7 buffers, 8 bits per buffer
-    char suffixes[7][8] = {"part0", "part1", "part2", "part3", "part4", "part5", "part6"};
+    // put 1 bit from left + 1 bit from right in each buffer
+    char suffixes[7][8] = {"p1", "p2", "x3", "p4", "x2", "x1", "x0"};
 
     for (int i = 0; i < 7; i++)
     {
