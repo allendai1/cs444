@@ -3,9 +3,6 @@
 #include <string.h>
 #include <getopt.h>
 
-
-
-
 const char *arrToBin(unsigned char arr[])
 {
     char binaryString[9];
@@ -21,13 +18,14 @@ const char *arrToBin(unsigned char arr[])
 
     return str_to_ret;
 }
-int detectError(unsigned char buffer[7]){
+int detectError(unsigned char buffer[7])
+{
     int errorCode = 0;
-    //P1 ^ D1 ^ D2 ^ D4
+    // P1 ^ D1 ^ D2 ^ D4
     if (buffer[0] ^ buffer[2] ^ buffer[4] ^ buffer[6] == 1)
     {
         errorCode = 1;
-    }// P2 ^ D1 ^ D3 ^ D4
+    } // P2 ^ D1 ^ D3 ^ D4
     else if (buffer[1] ^ buffer[2] ^ buffer[5] ^ buffer[6])
     {
         errorCode = 2;
@@ -38,7 +36,6 @@ int detectError(unsigned char buffer[7]){
     }
     return errorCode;
 }
-
 
 void decodeRAID2(char *inputFilename)
 {
@@ -58,7 +55,6 @@ void decodeRAID2(char *inputFilename)
     strcat(outputFilename, ".2");
     FILE *outputFile = fopen(outputFilename, "w");
 
-
     // Open all the filename parts
     for (int i = 0; i < 7; i++)
     {
@@ -66,87 +62,64 @@ void decodeRAID2(char *inputFilename)
 
         outputFiles[i] = fopen(outputFilenames[i], "rb");
     }
-
-  
-    for (int i = 0; i < 7; i++)
+    // continuously take a byte from each and fill our temp_buffer
+    while ((temp_buffer[0] = fgetc(outputFiles[0])) != EOF)
     {
+        // continuously take byte from each part
+        for (int i = 1; i < 7; i++)
+        {
+            
 
-        int byte = fgetc(outputFiles[i]);
-        temp_buffer[i] = byte; // read the decimal value into temp. buffer
-
-    }
-
-
-
-    // for(int i=0;i<8;i++){
-        
-    // }
-    for (int i = 0; i < 7; i++)
-    {
-        // take that decimal and get the most signifigant digit/left-most
-        binaryString[i] = temp_buffer[i] >> 7;
-    }
-
-    // for(int i=0;i<7;i++){
-    //     printf("%d", binaryString[i]);
-    // }
-    // decode the binaryString that was created from taking 1st of each buffer
-    // error detection
-    errorCode=detectError(binaryString);
-    // flip the bit at the errorCode index
-    if (errorCode!=0){
-        printf("error code %d", errorCode);
-        binaryString[errorCode] = 1 - binaryString[errorCode];
-    }
-    // once error is corrected, store non-parity bits into res_buffer
-    // not parity bits: binaryString[2], binaryString[4], binaryString[5], binaryString[6]
-
-    
-    // buffer has 4 bits alrdy, put next 4 at pos. 4,5,6,7, now its full so write it
-    if (bufferCount==4){
-        res_buffer[4] = binaryString[2];
-        res_buffer[5]= binaryString[4];
-        res_buffer[6] = binaryString[5];
-        res_buffer[7] = binaryString[6];
-
-        // for(int i =0;i<8;i++){
-        //     printf("%d ", res_buffer[i]);
-        // }
-        // take the buffer [1,0,0,1,0,0,1,1] and turn it into binary then ASCII
-        char *endptr;
-
-        
-        long decimalValue = strtol(arrToBin(res_buffer), &endptr, 2);
-        fputc(decimalValue,outputFile);
-
-        bufferCount=0;
-
-        
-        
-        
-    }
-    else{// otherwise put bits at 0,1,2,3
-        res_buffer[0] = binaryString[2];
-        res_buffer[1]= binaryString[4];
-        res_buffer[2] = binaryString[5];
-        res_buffer[3] = binaryString[6];
-                for(int i =0;i<4;i++){
-            printf("%d ", res_buffer[i]);
+            int byte = fgetc(outputFiles[i]);
+            temp_buffer[i] = byte; // fill the buffer
         }
-        bufferCount+=4;
+
+        // get the binary string from taking ith of each buffer
+        for (int i = 0; i < 8; i++)
+        {
+            // create binary string using 1 bit from each buffer 
+            for (int j = 0; j < 7; j++)
+            {
+
+                // ((temp_buffer[j] >> (7-k-1)) % 2)
+                // take that decimal and get the most signifigant digit/left-most
+                binaryString[j] = ((temp_buffer[j] >> (8-i-1)) % 2);
+                // printf("%d ", binaryString[j]);
+            }
+            // printf("\n");
+            // check binary string for error
+            errorCode = detectError(binaryString);
+            if (errorCode != 0)
+            {
+                binaryString[errorCode] = 1 - binaryString[errorCode];
+            }
+            if (bufferCount == 4) // buffer is full so write output and empty
+            {
+                res_buffer[4] = binaryString[2];
+                res_buffer[5] = binaryString[4];
+                res_buffer[6] = binaryString[5];
+                res_buffer[7] = binaryString[6];
+              
+                
+                // take the buffer [1,0,0,1,0,0,1,1] and turn it into binary then ASCII
+                char *endptr;
+
+                long decimalValue = strtol(arrToBin(res_buffer), &endptr, 2);
+                fputc(decimalValue, outputFile);
+                // printf("decimal value: %lu\n", decimalValue);
+
+                bufferCount = 0;
+            }
+            else
+            { // otherwise put bits at 0,1,2,3
+                res_buffer[0] = binaryString[2];
+                res_buffer[1] = binaryString[4];
+                res_buffer[2] = binaryString[5];
+                res_buffer[3] = binaryString[6];
+                bufferCount += 4;
+            }
+        }
     }
-   
-
-
-    
-
-
-
-
-
-
-
-    
 
     // Close all the file name parts
     for (int i = 0; i < 7; i++)
@@ -154,9 +127,7 @@ void decodeRAID2(char *inputFilename)
         fclose(outputFiles[i]);
     }
     fclose(outputFile);
-
 }
-
 
 int main(int argc, char *argv[])
 {
