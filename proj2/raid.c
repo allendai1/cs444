@@ -118,6 +118,7 @@ void encodeRAID2(char *inputFilename)
             // for each buffer, print and output it
             for (int j = 0; j < 7; j++)
             {
+
                 char *endptr;
                 const char *binaryString = arrToBin(buffers[j]);
                 long decimalValue = strtol(binaryString, &endptr, 2);
@@ -127,6 +128,7 @@ void encodeRAID2(char *inputFilename)
                 fputc(decimalValue, outputFiles[j]);
             }
 
+
             lindex = 0;
             rindex = 1;
             bufferCount = 0;
@@ -135,23 +137,23 @@ void encodeRAID2(char *inputFilename)
     // end of while
 
     // (bufferCount / 8) full buffers to put into disk + bufferCount % 8 bits into the next disk
-    printf("%d extra bits in buffer\n", bufferCount);
+    // printf("\n%d extra bits in buffer\n", bufferCount);
 
-    if (bufferCount > 0)
-    {
-        int bufferRemainder = (bufferCount / 7);
-        for (int i = 0; i < 7; i++)
-        {
-            char *endptr;
+    // if (bufferCount > 0)
+    // {
+    //     int bufferRemainder = (bufferCount / 7);
+    //     for (int i = 0; i < 7; i++)
+    //     {
+    //         char *endptr;
 
-            const char *binaryString = arrToBin(buffers[index]);
+    //         const char *binaryString = arrToBin(buffers[index]);
 
-            long decimalValue = strtol(binaryString, &endptr, 2);
-            fputc((decimalValue >> 8 - bufferRemainder), outputFiles[i]);
-            bufferCount -= bufferRemainder;
-        }
-    }
-    printf("%d extra bits in buffer\n", bufferCount);
+    //         long decimalValue = strtol(binaryString, &endptr, 2);
+    //         fputc((decimalValue >> (8 - bufferRemainder)), outputFiles[i]);
+    //         bufferCount -= bufferRemainder;
+    //     }
+    // }
+    // printf("%d extra bits in buffer\n", bufferCount);
 
     // Close all the files
     for (int i = 0; i < 7; i++)
