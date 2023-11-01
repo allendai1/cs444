@@ -4,17 +4,13 @@
 
 const char *arrToBin(unsigned char arr[])
 {
-    char binaryString[9];
     char *str_to_ret = malloc(sizeof(char) * 9);
-    char term = '\0';
-    strcpy(binaryString, "");
 
     for (int p = 0; p < 8; p++)
     {
-        char bitChar = (arr[p] == 1) ? '1' : '0';
-        strcat(str_to_ret, &bitChar);
+        str_to_ret[p] = (arr[p] == 1) ? '1' : '0';
     }
-
+    
     return str_to_ret;
 }
 unsigned char hamming74(int nibble)
@@ -62,7 +58,6 @@ void encodeRAID2(char *inputFilename)
 
     // Perform RAID2 encoding
 
-    int index = 0;
     int byte;
     int lindex = 0;
     int rindex = 1;
@@ -91,8 +86,8 @@ void encodeRAID2(char *inputFilename)
         int hrBinary[7];
         for (int p = 6; p >= 0; p--)
         {
-            hlBinary[p] = (hl >> 6 - p) & 1;
-            hrBinary[p] = (hr >> 6 - p) & 1;
+            hlBinary[p] = (hl >> (6 - p)) & 1;
+            hrBinary[p] = (hr >> (6 - p)) & 1;
         }
 
         // for each p1,p2,p4,x0,x1,x2,x3, place lbitrbit into each
@@ -122,10 +117,10 @@ void encodeRAID2(char *inputFilename)
                 char *endptr;
                 const char *binaryString = arrToBin(buffers[j]);
                 long decimalValue = strtol(binaryString, &endptr, 2);
-                // printf("Binary String: %s\n", binaryString);
-                // printf("Decimal Value: %ld\n", decimalValue);
-
+            
+                // printf("%X", decimalValue);
                 fputc(decimalValue, outputFiles[j]);
+                
             }
 
 
@@ -136,24 +131,7 @@ void encodeRAID2(char *inputFilename)
     }
     // end of while
 
-    // (bufferCount / 8) full buffers to put into disk + bufferCount % 8 bits into the next disk
-    // printf("\n%d extra bits in buffer\n", bufferCount);
 
-    // if (bufferCount > 0)
-    // {
-    //     int bufferRemainder = (bufferCount / 7);
-    //     for (int i = 0; i < 7; i++)
-    //     {
-    //         char *endptr;
-
-    //         const char *binaryString = arrToBin(buffers[index]);
-
-    //         long decimalValue = strtol(binaryString, &endptr, 2);
-    //         fputc((decimalValue >> (8 - bufferRemainder)), outputFiles[i]);
-    //         bufferCount -= bufferRemainder;
-    //     }
-    // }
-    // printf("%d extra bits in buffer\n", bufferCount);
 
     // Close all the files
     for (int i = 0; i < 7; i++)
