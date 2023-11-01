@@ -5,17 +5,13 @@
 
 const char *arrToBin(unsigned char arr[])
 {
-    char binaryString[9];
     char *str_to_ret = malloc(sizeof(char) * 9);
-    char term = '\0';
-    strcpy(binaryString, "");
 
     for (int p = 0; p < 8; p++)
     {
-        char bitChar = (arr[p] == 1) ? '1' : '0';
-        strcat(str_to_ret, &bitChar);
+        str_to_ret[p] = (arr[p] == 1) ? '1' : '0';
     }
-
+    
     return str_to_ret;
 }
 int detectError(unsigned char buffer[7])
@@ -68,10 +64,10 @@ void decodeRAID2(char *inputFilename)
         // continuously take byte from each part
         for (int i = 1; i < 7; i++)
         {
-            
-
             int byte = fgetc(outputFiles[i]);
             temp_buffer[i] = byte; // fill the buffer
+            // printf("%d ", byte);
+
         }
 
         // get the binary string from taking ith of each buffer
@@ -84,7 +80,7 @@ void decodeRAID2(char *inputFilename)
                 // ((temp_buffer[j] >> (7-k-1)) % 2)
                 // take that decimal and get the most signifigant digit/left-most
                 binaryString[j] = ((temp_buffer[j] >> (8-i-1)) % 2);
-                // printf("%d ", binaryString[j]);
+                // printf("%d ", temp_buffer[j]);
             }
             // printf("\n");
             // check binary string for error
@@ -105,8 +101,15 @@ void decodeRAID2(char *inputFilename)
                 char *endptr;
 
                 long decimalValue = strtol(arrToBin(res_buffer), &endptr, 2);
+
+                // for(int i=0;i<8;i++){
+                //     // printf("%d ", res_buffer[i]);
+                // }
+                // for(int i=0;i<7;i++){
+                //     printf("%d ", decimalValue);
+                // }
+                // printf("\n");
                 fputc(decimalValue, outputFile);
-                // printf("decimal value: %lu\n", decimalValue);
 
                 bufferCount = 0;
             }
