@@ -14,21 +14,34 @@ const char *arrToBin(unsigned char arr[])
     
     return str_to_ret;
 }
-int detectError(unsigned char buffer[7])
-{
+int detectError(int buffer[7])
+{   int p1,p2,d1,p4,d2,d3,d4;
+    p1 = buffer[0];
+    p2 = buffer[1];
+    d1 = buffer[2];
+    p4 = buffer[3];
+    d2 = buffer[4];
+    d3 = buffer[5];
+    d4 = buffer[6];
+    // printf("%d%d%d%d%d%d%d\n",p1,p2,d1,p4,d2,d3,d4);
     int errorCode = 0;
     // P1 ^ D1 ^ D2 ^ D4
-    if (buffer[0] ^ buffer[2] ^ buffer[4] ^ buffer[6] == 1)
+    if ((p1 ^ d1 ^ d2 ^ d4) == 1)
     {
-        errorCode = 1;
+        printf("error code1");
+        errorCode += 1;
     } // P2 ^ D1 ^ D3 ^ D4
-    else if (buffer[1] ^ buffer[2] ^ buffer[5] ^ buffer[6])
+    if ((p2 ^ d1 ^ d3 ^ d4) == 1)
     {
-        errorCode = 2;
+        printf("error code2");
+
+        errorCode += 2;
     } // P4 ^ D2 ^ D3 ^ D4
-    else if (buffer[3] ^ buffer[4] ^ buffer[5] ^ buffer[6])
+    if ((p4 ^ d2 ^ d3 ^ d4)==1)
     {
-        errorCode = 4;
+        printf("error code4");
+
+        errorCode += 4;
     }
     return errorCode;
 }
@@ -42,7 +55,9 @@ void decodeRAID2(char *inputFilename)
     char suffixes[7][8] = {"part0", "part1", "part2", "part3", "part4", "part5", "part6"};
     int temp_buffer[7];
     unsigned char buffers[7][8];
-    unsigned char binaryString[7];
+    // unsigned char binaryString[7];
+    int binaryString[7];
+
     int errorCode = 0;
     int bufferCount = 0;
     unsigned char res_buffer[8];
@@ -61,6 +76,7 @@ void decodeRAID2(char *inputFilename)
     // continuously take a byte from each and fill our temp_buffer
     while ((temp_buffer[0] = fgetc(outputFiles[0])) != EOF)
     {
+        
         // continuously take byte from each part
         for (int i = 1; i < 7; i++)
         {
@@ -85,6 +101,7 @@ void decodeRAID2(char *inputFilename)
             // printf("\n");
             // check binary string for error
             errorCode = detectError(binaryString);
+            // printf("%d", errorCode);
             if (errorCode != 0)
             {
                 binaryString[errorCode] = 1 - binaryString[errorCode];
